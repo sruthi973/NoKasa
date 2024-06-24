@@ -1,8 +1,1 @@
-{
-    "builds": [{ "src": "*.go", "use": "@vercel/go" }],
-    "routes": [
-      { "src": "/", "dest": "/main.go" },
-      { "src": "/form", "dest": "/main.go" },
-      { "src": "/map", "dest": "/main.go" }
-    ]
-  }
+

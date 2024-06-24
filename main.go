@@ -1,6 +1,5 @@
 package main
 
-
 import (
     "context"
     "encoding/json"
@@ -8,8 +7,6 @@ import (
     "log"
     "net/http"
     "path/filepath"
-	"os"
-    "fmt"
     "go.mongodb.org/mongo-driver/bson"
     "go.mongodb.org/mongo-driver/mongo"
     "go.mongodb.org/mongo-driver/mongo/options"
@@ -32,15 +29,16 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-
     defer func() {
         if err = client.Disconnect(context.Background()); err != nil {
             log.Fatal(err)
         }
     }()
-	http.HandleFunc("/", handleRoot)
-    http.HandleFunc("/", handleFormSubmission)
-    http.HandleFunc("/map", handleMapDisplay)
+
+    // Define HTTP handler function for form submission
+    http.HandleFunc("/api/submit", handleFormSubmission)
+    
+    // Listen and serve
     log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
@@ -59,41 +57,10 @@ func handleFormSubmission(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        http.Redirect(w, r, "/map", http.StatusSeeOther)
+        // Respond with success status
+        w.WriteHeader(http.StatusCreated)
+        json.NewEncoder(w).Encode(order)
     } else {
-        tmpl, _ := template.ParseFiles(filepath.Join("templates", "form.html"))
-        tmpl.Execute(w, nil)
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
     }
-}
-
-func handleMapDisplay(w http.ResponseWriter, r *http.Request) {
-    collection := client.Database("order_locator").Collection("orders")
-    cursor, err := collection.Find(context.Background(), bson.M{})
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
-
-    var orders []Order
-    if err = cursor.All(context.Background(), &orders); err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
-
-    data, err := json.Marshal(orders)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
-
-    tmpl, _ := template.ParseFiles(filepath.Join("templates", "map.html"))
-    tmpl.Execute(w, string(data))
-}
-
-func handleRoot(w http.ResponseWriter, r *http.Request) {
-    if r.URL.Path != "/" {
-        http.NotFound(w, r)
-        return
-    }
-    http.Redirect(w, r, "/form", http.StatusSeeOther)
 }

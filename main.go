@@ -3,10 +3,10 @@ package main
 import (
     "context"
     "encoding/json"
+    "html/template"
     "log"
     "net/http"
     "path/filepath"
-    "html/template"
 
     "go.mongodb.org/mongo-driver/bson"
     "go.mongodb.org/mongo-driver/mongo"
@@ -39,11 +39,6 @@ func main() {
 
     http.HandleFunc("/", handleFormSubmission)
     http.HandleFunc("/map", handleMapDisplay)
-
-    // This line is crucial for Vercel serverless functions
-    // It registers your main handler function
-    http.HandleFunc("/api", handleAPIRequest)
-
     log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
@@ -91,43 +86,4 @@ func handleMapDisplay(w http.ResponseWriter, r *http.Request) {
 
     tmpl, _ := template.ParseFiles(filepath.Join("templates", "map.html"))
     tmpl.Execute(w, string(data))
-}
-
-func handleAPIRequest(w http.ResponseWriter, r *http.Request) {
-    // This function can be used as a serverless function entry point
-    // Handle your API requests here
-    switch r.URL.Path {
-    case "/api/orders":
-        handleOrdersAPI(w, r)
-    default:
-        http.NotFound(w, r)
-    }
-}
-
-func handleOrdersAPI(w http.ResponseWriter, r *http.Request) {
-    if r.Method == http.MethodGet {
-        collection := client.Database("order_locator").Collection("orders")
-        cursor, err := collection.Find(context.Background(), bson.M{})
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-
-        var orders []Order
-        if err = cursor.All(context.Background(), &orders); err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-
-        jsonBytes, err := json.Marshal(orders)
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-
-        w.Header().Set("Content-Type", "application/json")
-        w.Write(jsonBytes)
-    } else {
-        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-    }
 }

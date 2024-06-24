@@ -1,13 +1,9 @@
 {
-  
-  "routes": [
-    { "src": "/", "dest": "/main.go" },
-    { "src": "/map", "dest": "/main.go" }
-  ],
-  "functions": {
-    "api/main": {
-      "runtime": "go1.22.4",
-      "memory": 1024
-    }
+    "builds": [{ "src": "*.go", "use": "@vercel/go" }],
+    "routes": [
+      { "src": "/", "dest": "/main.go" },
+      { "src": "/map", "dest": "/main.go" }
+    ],
+   
   }
-}
+  

@@ -22,6 +22,27 @@ type Order struct {
 
 var client *mongo.Client
 
+func main() {
+    // Replace with your actual MongoDB URI
+    clientOptions := options.Client().ApplyURI("mongodb+srv://prachhhi:oprybBJBWko7zbjE@cluster0.r487mib.mongodb.net/?retryWrites=true&w=majority")
+    var err error
+    client, err = mongo.Connect(context.Background(), clientOptions)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    defer func() {
+        if err = client.Disconnect(context.Background()); err != nil {
+            log.Fatal(err)
+        }
+    }()
+
+    http.HandleFunc("/", handleFormSubmission)
+    http.HandleFunc("/map", handleMapDisplay)
+
+    log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
 func handleFormSubmission(w http.ResponseWriter, r *http.Request) {
     if r.Method == http.MethodPost {
         var order Order

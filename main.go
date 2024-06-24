@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
     "context"
@@ -21,7 +21,7 @@ type Order struct {
 
 var client *mongo.Client
 
-func main() {
+func init() {
     // Connect to MongoDB
     clientOptions := options.Client().ApplyURI("mongodb+srv://prachhhi:oprybBJBWko7zbjE@cluster0.r487mib.mongodb.net/?retryWrites=true&w=majority")
     var err error
@@ -34,15 +34,10 @@ func main() {
             log.Fatal(err)
         }
     }()
-
-    // Define HTTP handler function for form submission
-    http.HandleFunc("/api/submit", handleFormSubmission)
-    
-    // Listen and serve
-    log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func handleFormSubmission(w http.ResponseWriter, r *http.Request) {
+// HandleFormSubmission is the exported handler function for form submission
+func HandleFormSubmission(w http.ResponseWriter, r *http.Request) {
     if r.Method == http.MethodPost {
         var order Order
         order.Name = r.FormValue("name")

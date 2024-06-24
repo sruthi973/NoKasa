@@ -67,36 +67,3 @@ func handleMapDisplay(w http.ResponseWriter, r *http.Request) {
     tmpl, _ := template.ParseFiles(filepath.Join("templates", "map.html"))
     tmpl.Execute(w, string(data))
 }
-
-// Exported function for Vercel
-func Handler(w http.ResponseWriter, r *http.Request) {
-    switch r.URL.Path {
-    case "/":
-        handleFormSubmission(w, r)
-    case "/map":
-        handleMapDisplay(w, r)
-    default:
-        http.NotFound(w, r)
-    }
-}
-
-func main() {
-    // Connect to MongoDB
-    clientOptions := options.Client().ApplyURI("mongodb+srv://prachhhi:oprybBJBWko7zbjE@cluster0.r487mib.mongodb.net/?retryWrites=true&w=majority")
-    var err error
-    client, err = mongo.Connect(context.Background(), clientOptions)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    defer func() {
-        if err = client.Disconnect(context.Background()); err != nil {
-            log.Fatal(err)
-        }
-    }()
-
-    // Start local server (optional for local development)
-    http.HandleFunc("/", handleFormSubmission)
-    http.HandleFunc("/map", handleMapDisplay)
-    log.Fatal(http.ListenAndServe(":8080", nil))
-}

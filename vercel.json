@@ -6,7 +6,7 @@
   ],
   "functions": {
     "api/main": {
-      "runtime": "go1.17",
+      "runtime": "go1.22.4",
       "memory": 1024
     }
   }

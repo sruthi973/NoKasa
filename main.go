@@ -1,4 +1,4 @@
-package handler
+package main
 
 import (
     "context"
@@ -7,6 +7,7 @@ import (
     "log"
     "net/http"
     "path/filepath"
+
     "go.mongodb.org/mongo-driver/bson"
     "go.mongodb.org/mongo-driver/mongo"
     "go.mongodb.org/mongo-driver/mongo/options"
@@ -21,7 +22,7 @@ type Order struct {
 
 var client *mongo.Client
 
-func init() {
+func main() {
     // Connect to MongoDB
     clientOptions := options.Client().ApplyURI("mongodb+srv://prachhhi:oprybBJBWko7zbjE@cluster0.r487mib.mongodb.net/?retryWrites=true&w=majority")
     var err error
@@ -29,15 +30,19 @@ func init() {
     if err != nil {
         log.Fatal(err)
     }
+
     defer func() {
         if err = client.Disconnect(context.Background()); err != nil {
             log.Fatal(err)
         }
     }()
+
+    http.HandleFunc("/", handleFormSubmission)
+    http.HandleFunc("/map", handleMapDisplay)
+    log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-// HandleFormSubmission is the exported handler function for form submission
-func HandleFormSubmission(w http.ResponseWriter, r *http.Request) {
+func handleFormSubmission(w http.ResponseWriter, r *http.Request) {
     if r.Method == http.MethodPost {
         var order Order
         order.Name = r.FormValue("name")
@@ -52,10 +57,33 @@ func HandleFormSubmission(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        // Respond with success status
-        w.WriteHeader(http.StatusCreated)
-        json.NewEncoder(w).Encode(order)
+        http.Redirect(w, r, "/map", http.StatusSeeOther)
     } else {
-        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        tmpl, _ := template.ParseFiles(filepath.Join("templates", "form.html"))
+        tmpl.Execute(w, nil)
     }
+}
+
+func handleMapDisplay(w http.ResponseWriter, r *http.Request) {
+    collection := client.Database("order_locator").Collection("orders")
+    cursor, err := collection.Find(context.Background(), bson.M{})
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    var orders []Order
+    if err = cursor.All(context.Background(), &orders); err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    data, err := json.Marshal(orders)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    tmpl, _ := template.ParseFiles(filepath.Join("templates", "map.html"))
+    tmpl.Execute(w, string(data))
 }
